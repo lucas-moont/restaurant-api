@@ -6,7 +6,10 @@ import z from "zod";
 class ProductController {
   async index(req: Request, res: Response, next: NextFunction) {
     try {
-      const products = await knex<ProductRepository>("products").select("*");
+      const { name } = req.query
+
+      const products = await knex<ProductRepository>("products").select("*").whereLike("name", `%${name ?? ''}%`).orderBy('name');
+      
       return res.json({ products });
     } catch (error) {
       next(error);
