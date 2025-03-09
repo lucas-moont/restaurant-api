@@ -78,6 +78,28 @@ class ProductController {
       next(error);
     }
   }
+
+  async delete(req: Request, res: Response, next: NextFunction) {
+    try{
+      const id = z
+      .string()
+      .transform((value) => Number(value))
+      .refine((value) => !isNaN(value), { message: "id must be a number" })
+      .parse(req.params.id);
+
+      const product = await knex<ProductRepository>('products').select('*').where({ id }).first()
+
+      if(!product) {
+        throw new AppError('Product not found', 404)
+      }
+
+      await knex<ProductRepository>('products').delete().where({ id })
+
+      res.json({message: 'Product removed successfully'})
+    }catch(error){
+      next(error)
+    }
+  }
 }
 
 export { ProductController };
