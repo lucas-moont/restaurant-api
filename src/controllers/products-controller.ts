@@ -69,7 +69,7 @@ class ProductController {
           ...product,
           name: name !== undefined ? name : product.name,
           price: price !== undefined ? price : product.price,
-          updated_at: new Date(),
+          updated_at: knex.fn.now(),
         })
         .where({ id });
 
