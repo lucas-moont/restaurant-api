@@ -13,6 +13,28 @@ class TablesController {
       next(error)
     }
   }
+
+  async create(req: Request, res: Response, next: NextFunction) {
+    try{
+      const bodySchema = z.object({
+        table_number: z.number().int().positive()
+      })
+
+      const { table_number } = bodySchema.parse(req.body)
+
+      const tableExists = await knex<TablesRepository>('tables').where({ table_number }).first()
+
+      if(tableExists){
+        throw new AppError('Table already exists', 400)
+      }
+
+      await knex<TablesRepository>('tables').insert( { table_number })
+
+      res.status(201).json({ message: `Table ${table_number} created sucessfully`})
+    }catch(error){
+      next(error)
+    }
+  }
 }
 
 export { TablesController }
