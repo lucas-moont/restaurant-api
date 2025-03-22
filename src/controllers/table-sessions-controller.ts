@@ -4,6 +4,20 @@ import { AppError } from "@/utils/AppError";
 import z from "zod";
 
 class TableSessionsController {
+  async index(req: Request, res: Response, next: NextFunction) {
+    try {
+      const sessions = await knex<TableSessionsRepository>("tables_sessions")
+        .select("*")
+        .orderBy("closed_at");
+
+      if(sessions.length === 0) {
+        res.json({ message: 'No sessions found'})
+      }
+
+      res.json(sessions)
+    } catch (e) {}
+  }
+
   async create(req: Request, res: Response, next: NextFunction) {
     try {
       const bodySchema = z.object({
@@ -25,9 +39,9 @@ class TableSessionsController {
         .orderBy("opened_at")
         .first();
 
-        if(session && !session.closed_at) {
-          throw new AppError('This table is already opened', 400)
-        }
+      if (session && !session.closed_at) {
+        throw new AppError("This table is already opened", 400);
+      }
 
       await knex<TableSessionsRepository>("tables_sessions").insert({
         table_id,
