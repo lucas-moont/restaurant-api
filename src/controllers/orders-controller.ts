@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { AppError } from "@/utils/AppError";
 import z from "zod";
 import { knex } from "@/database/knex";
+import { table } from "console";
 
 class OrdersController {
   async create(req: Request, res: Response, next: NextFunction) {
@@ -55,12 +56,43 @@ class OrdersController {
         .refine((value) => !isNaN(value), { message: "Invalid id" })
         .parse(req.params.id);
 
-      const order = await knex('orders')
-        .join('products', 'orders.product_id', 'products.id')
-        .select("orders.id", "orders.table_session_id", "orders.product_id", "orders.quantity", "orders.price", 'products.name')
-        .where({ table_session_id})
+      const order = await knex("orders")
+        .join("products", "orders.product_id", "products.id")
+        .select(
+          "orders.id",
+          "orders.table_session_id",
+          "orders.product_id",
+          "orders.quantity",
+          "orders.price",
+          "products.name"
+        )
+        .where({ table_session_id })
+        .orderBy("orders.created_at", "desc");
 
-      res.json({order})
+      res.json({ order });
+    } catch (e) {
+      next(e);
+    }
+  }
+
+  async total(req: Request, res: Response, next: NextFunction) {
+    try {
+      const id = z
+        .string()
+        .transform((value) => Number(value))
+        .refine((value) => !isNaN(value), { message: "Invalid id" })
+        .parse(req.params.id);
+
+      const order = await knex<OrdersRepository>("orders")
+        .select(knex.raw("COALESCE(SUM(price), 0) as total"))
+        .where('table_session_id', id)
+        .first()
+
+      if (!order) {
+        throw new AppError("Order not found", 404);
+      }
+
+      return res.json({ order });
     } catch (e) {
       next(e);
     }
